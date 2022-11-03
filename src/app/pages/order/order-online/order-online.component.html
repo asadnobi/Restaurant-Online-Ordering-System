@@ -1,0 +1,249 @@
+<div class="order-page">
+  <div class="top-bg">
+    <div class="container info-box">
+      <div class="box">
+        <p class="r_name m-0 h4">{{(resdata$ | async)?.restaurant_data?.restaurant_name}}</p>
+        <p class="r_range m-0">{{(resdata$ | async)?.restaurant_data?.priceRange}} •
+          <ng-container *ngFor="let item of (resdata$ | async)?.restaurant_data?.cuisine_name | split">
+            <span>{{item.trim() | titlecase}}</span>
+          </ng-container>
+        </p>
+        <ng-container *ngIf="reviews?.average_point">
+          <p class="r_review">
+            <!-- <rating class="rating" [(ngModel)]="reviews?.average_point" readonly="true"></rating> -->
+            <span class="point">{{reviews?.average_point}} Out of 5</span>
+            <span class="rate">(
+              <ng-container *ngIf="reviews?.average_point >= 4">Excellent</ng-container>
+              <ng-container *ngIf="reviews?.average_point >= 3 && reviews?.average_point < 4">Good</ng-container>
+              <ng-container *ngIf="reviews?.average_point >= 2 && reviews?.average_point < 3">Average</ng-container>
+              <ng-container *ngIf="reviews?.average_point >= 1 && reviews?.average_point < 2">Poor</ng-container>
+            )</span>
+            <span class="no-of-review">
+              <a routerLink="/reviews" routerLinkActive="active">{{reviews?.total_reviews}} reviews</a>
+            </span>
+          </p>
+        </ng-container>
+        <legend class="divider"></legend>
+        <ng-container *ngIf="(orderdata$ | async)?.policy">
+          <p class="r_policy m-0">
+            Min {{(orderdata$ | async)?.policy?.policy?.takeaway | lowercase}} Amount {{(orderdata$ | async)?.policy?.min_amount | myCurrency}}
+          </p>
+        </ng-container>
+        <p class="r_schedule m-0">
+          <ng-container *ngIf="(!(resdata$ | async)?.restaurant_data?.is_ordering || (resdata$ | async)?.restaurant_data?.restaurant_mode !== 1); else regularWrap;">
+            {{(resdata$ | async)?.restaurant_data?.restaurant_mode_message ? (resdata$ | async)?.restaurant_data?.restaurant_mode_message : 'We are not taking order now!'}}
+          </ng-container>
+          <ng-template #regularWrap>
+            {{(schedule$ | async)?.label ? (schedule$ | async)?.label : 
+              (resdata$ | async)?.restaurant_data?.restaurant_mode_message ? (resdata$ | async)?.restaurant_data?.restaurant_mode_message :
+              'We are not taking order now!'
+            }}
+          </ng-template>
+        </p>
+      </div>
+    </div>
+    <div class="bg-image" [ngStyle]="{background: 'url('+(pageContent?.cover_image ? pageContent?.cover_image : (resdata$ | async)?.restaurant_data?.cover_image)+') no-repeat center top / cover'}"></div>
+  </div>
+  <nav #divOrderMenu id="order-menu" class="navbar sticky-top">
+    <div class="container">
+      <ul class="nav nav-pills me-auto visible_menu">
+        <ng-container *ngIf="menuCuisineList && menuCuisineList.length > 1">
+          <ng-container *ngFor="let cuisine of menuCuisineList; let last = last;">
+            <li class="nav-item highlighter" [ngStyle]="{'margin-right': last ? 0 : '5px'}" (click)="scrollToCuisine(cuisine?.cuisine_id)">
+              <a class="nav-link">{{cuisine?.cuisine_name}}</a>
+            </li>
+          </ng-container>
+        </ng-container>
+        <ng-container *ngFor="let category of menuList; index as i;">
+          <li class="nav-item" (click)="scrollTo(category?.category_name)">
+            <a style="pointer-events: none;" class="nav-link" href="#{{category?.category_name | char}}">{{category?.category_name}}</a>
+          </li>
+        </ng-container>
+      </ul>
+      <ul class="navbar-nav invisible_menu">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+            More
+          </a>
+          <ul class="dropdown-menu">
+            <ng-container *ngIf="menuCuisineList && menuCuisineList.length > 1">
+              <ng-container *ngFor="let cuisine of menuCuisineList; let last = last">
+                <li class="highlighter" [ngStyle]="{'margin-bottom': last ? 0 : '1px'}" (click)="scrollToCuisine(cuisine?.cuisine_id)">
+                  <a class="dropdown-item">{{cuisine?.cuisine_name}}</a>
+                </li>
+              </ng-container>
+            </ng-container>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <div class="container main-content" data-bs-spy="scroll" data-bs-target="#order-menu">
+    <div class="row">
+      <div class="col-12">
+        <div class="row">
+          <div #divDishWrapper class="col-md-8 left">
+            <ng-container *ngIf="(resdata$ | async)?.restaurant_data?.restaurant_mode !== 1">
+              <div class="alert alert-warning text-danger text-center" role="alert">
+                <div [innerHTML]="(resdata$ | async)?.restaurant_data?.restaurant_mode_message ? (resdata$ | async)?.restaurant_data?.restaurant_mode_message : 'We are not taking online orders right now.'"></div>
+              </div>
+            </ng-container>
+            <!-- <ng-template [ngIf]="(data | async)?.restaurant_data?.discounts?.length > 0 || (data | async)?.restaurant_data?.offers?.length > 0">
+              <carousel class="promotion-list" [interval]="false">
+                <ng-container *ngFor="let disc of (data | async)?.restaurant_data?.discounts | promoFilter">
+                  <slide *ngIf="disc?.is_active">
+                    <div class="card" [ngClass]="{'has-image': disc?.discount_image !== '' && disc?.discount_image !== null}">
+                      <div class="card-header" *ngIf="disc?.discount_image && disc?.discount_image !== ''" [ngStyle]="{'background-image': 'url('+disc?.discount_image+')'}"></div>
+                      <div class="card-body">
+                        <p class="item-lavel">
+                          <span class="badge badge-large badge-pill badge-primary font-weight-normal">Discount</span>
+                          <span><span class="icon start" *ngIf="disc?.end_date && disc?.end_date !== ''"><i class="icon-clock"></i></span><small>End: {{disc?.end_date | date:'mediumDate'}}</small></span>
+                        </p>
+                        <h5 class="card-title">{{disc?.discount_title}}</h5>
+                        <p class="card-text lc-4" [innerHTML]="disc?.discount_description | limit:85"></p>
+                        <p class="btn-grp">
+                          <button type="button" class="btn text-muted btn-link btn-sm" (click)="pomotionDetails(disc)">Terms & Condition</button>
+                        </p>
+                      </div>
+                    </div>
+                  </slide>
+                </ng-container>
+                <ng-container *ngFor="let offer of (data | async)?.restaurant_data?.offers | promoFilter">
+                  <slide *ngIf="offer?.is_active">
+                    <div class="card" [ngClass]="{'has-image': offer?.offer_image !== '' && offer?.offer_image !== null}">
+                      <div class="card-header" *ngIf="offer?.offer_image && offer?.offer_image !== ''" [ngStyle]="{'background-image': 'url('+offer?.offer_image+')'}"></div>
+                      <div class="card-body">
+                        <p class="item-lavel">
+                          <span class="badge badge-large badge-pill badge-primary font-weight-normal">Offer</span>
+                          <span><span class="icon start" *ngIf="offer?.end_date && offer?.end_date !== ''"><i class="icon-clock"></i></span><small>End: {{offer?.end_date | date:'mediumDate'}}</small></span>
+                        </p>
+                        <h5 class="card-title">{{offer?.offer_title}}</h5>
+                        <p class="card-text lc-4" [innerHTML]="offer?.offer_description | limit:85"></p>
+                        <p class="btn-grp">
+                          <button type="button" class="btn text-muted btn-link btn-sm" (click)="pomotionDetails(offer)">Terms & Condition</button>
+                        </p>
+                      </div>
+                    </div>
+                  </slide>
+                </ng-container>
+              </carousel>
+            </ng-template> -->
+            <!-- <ng-container *ngIf="popularItems && popularItems?.length > 0">
+              <div class="accordion mb-5">
+                <div class="card category-list">
+                  <div class="card-header category-list-header">
+                    <div><h4 class="category-title">Popular Dishes</h4></div>
+                  </div>
+                  <div class="card-body category-list-body">
+                    <ng-container *ngFor="let dish of popularItems; index as p;">
+                      <div class="card dish"
+                        [ngClass]="{'disabled': !dish?.is_active, 'selected': cartData | inArray:dish._id:'_id'}"
+                        (click)="selectedDish(dish, dish?.course_id, dish?.category_id)"
+                        [ngStyle]="{'grid-template-columns': (dish?.dish_image && dish?.dish_image !=='') ? 'auto 1fr' : null}">
+                        <div class="dish-img" *ngIf="dish?.dish_image && dish?.dish_image !==''" [ngStyle]="{'background-image': 'url('+dish?.dish_image+')'}"></div>
+                        <div class="dish-info">
+                          <p class="dish-name">{{dish?.dish_name}}
+                            <ng-container *ngIf="dish?.is_popular === true">
+                              <span class="icon dish-popular"><i class="icon-icon-263075" ></i></span>
+                            </ng-container>
+                          </p>
+                          <ng-container *ngIf="dish?.dish_description && dish?.dish_description !== ''">
+                            <p class="dish-desc" [ngClass]="(dish?.dish_image && dish?.dish_image) !=='' ? 'lc-2' : 'lc-3'">{{dish?.dish_description | limit:(dish?.dish_image && dish?.dish_image) !=='' ? 60 : 90}}</p>
+                          </ng-container>
+                          <p class="dish-feature">
+                            <span class="dish-price">{{dish?.price |  CustomCurrency}}</span>
+                            <span class="dish-levels">
+                              <span class="dish-allg-levels" *ngIf="dish?.allergence !== '' && dish?.allergence !== null && dish?.allergence !== 'None'">
+                                <ng-container *ngFor="let item of dish?.allergence | split">
+                                  <img  src="assets/allgs/{{item}}.png" class="img-fluid" alt="{{item}}"
+                                  tooltip="{{item}}" container="body"/>
+                                </ng-container>
+                              </span>
+                              <span class="dish-spice-levels" *ngIf="dish?.spice_level !=='' && dish?.spice_level !== null && dish?.spice_level !== 'None'">
+                                <ng-template #spiceTemplate>Spice Level: <br><b>{{dish?.spice_level}}</b></ng-template>
+                                <img src="assets/spices/{{dish?.spice_level.trim()}}.svg" class="img-fluid" alt="{{dish?.spice_level}}"
+                                [tooltip]="spiceTemplate" container="body"/>
+                              </span>
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    </ng-container>
+                  </div>
+                </div>
+              </div>
+            </ng-container> -->
+            <ng-container *ngFor="let category of menuList; index as i;">
+              <div class="card category-list" id="{{category?.category_name | char}}">
+                <div class="card-header category-list-header" [ngClass]="{'header-with-image': category?.category_image && category?.category_image !== ''}" >
+                  <!-- data-toggle="collapse" [attr.data-target]="'#category'+j" aria-expanded="true" [attr.aria-controls]="'category'+j" -->
+                  <ng-container *ngIf="category?.category_image && category?.category_image !== ''">
+                    <img  [src]="category?.category_image" class="img-fluid" alt="" />
+                  </ng-container>
+                  <div>
+                    <h4 class="category-title">{{category?.category_name}}</h4>
+                    <p class="category-desc">{{category?.category_description}}</p>
+                  </div>
+                </div>
+                <div id="category{{i}}" class="collapse show" [attr.aria-labelledby]="category?.category_name | char">
+                  <div class="card-body category-list-body">
+                    <ng-container *ngFor="let dish of category?.category_dishes; index as k;">
+                      <ng-container *ngIf="dish?.is_active">
+                        <div class="card dish"
+                          [ngClass]="{'disabled': !dish?.is_active && dish?.is_auto_active, 'selected': cartData | array:dish?._id}"
+                          [ngStyle]="{'grid-template-columns': (dish?.dish_image && dish?.dish_image !=='') ? 'auto 1fr' : null}"
+                          (click)="selectedDish(dish, category?.course_id, category?._id)">
+                          <div class="dish-img" *ngIf="dish?.dish_image && dish?.dish_image !==''" [ngStyle]="{'background-image': 'url('+dish?.dish_image+')'}"></div>
+                          <div class="dish-info">
+                            <p class="dish-name">
+                              <span class="name lc-1">
+                                <ng-container *ngIf="dish?.combination && dish?.combination?.length > 0; else dishName">
+                                  {{dish?.dish_name.trim()}}
+                                  <small>(Opt.
+                                    <ng-container *ngFor="let comb of dish?.combination">
+                                      <span *ngFor="let opt of comb?.options">{{opt.dish_name.trim()}}</span>
+                                    </ng-container>)
+                                  </small>
+                                </ng-container>
+                                <ng-template #dishName>{{dish?.dish_name.trim()}}</ng-template>
+                              </span>
+                              <ng-container *ngIf="dish?.is_popular === true">
+                                <span class="icon dish-popular"><i class="icon-icon-263075" ></i></span>
+                              </ng-container>
+                            </p>
+                            <ng-container *ngIf="dish?.dish_description && dish?.dish_description !== ''">
+                              <p class="dish-desc" [ngClass]="(dish?.dish_image && dish?.dish_image) !=='' ? 'lc-2' : 'lc-3'">{{dish?.dish_description | ellipsis:(dish?.dish_image && dish?.dish_image) !=='' ? 60 : 90}}</p>
+                            </ng-container>
+                            <p class="dish-feature">
+                              <span class="dish-price">{{dish?.price |  myCurrency}}</span>
+                              <span class="dish-levels">
+                                <!-- <span class="dish-allg-levels" *ngIf="dish?.allergence !== '' && dish?.allergence !== null && dish?.allergence !== 'None'">
+                                  <ng-container *ngFor="let item of dish?.allergence | split">
+                                    <img  src="assets/allgs/{{item}}.png" class="img-fluid" alt="{{item}}"
+                                    tooltip="{{item}}" container="body"/>
+                                  </ng-container>
+                                </span>
+                                <span class="dish-spice-levels" *ngIf="dish?.spice_level !=='' && dish?.spice_level !== null && dish?.spice_level !== 'None'">
+                                  <ng-template #spiceTemplate>Spice Level: <br><b>{{dish?.spice_level}}</b></ng-template>
+                                  <img src="assets/spices/{{dish?.spice_level.trim()}}.svg" class="img-fluid" alt="{{dish?.spice_level}}"
+                                  [tooltip]="spiceTemplate" container="body"/>
+                                </span> -->
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      </ng-container>
+                    </ng-container>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+          <div class="col-md-4 right" #divOrderCart>
+            <app-cart></app-cart>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

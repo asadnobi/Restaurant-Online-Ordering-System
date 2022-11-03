@@ -1,0 +1,203 @@
+<div class="card order-cart" id="order-cart">
+  <div class="card-body p-1">
+    <ng-container *ngIf="cartdata.length > 0; else emptyCartDiv">
+      <div class="wrapper-top" *ngIf="(orderdata$ | async)?.policy?.takeaway">
+        <div class="col-12 p-2 d-flex gap-3 justify-content-center align-items-center policy-info-bar">
+          <p class="m-0">{{(orderdata$ | async)?.policy?.takeaway | titlecase}} {{(orderdata$ | async)?.policy?.clock_time}}</p>
+          <button type="button" class="btn btn-sm btn-primary" (click)="changePolicy()">Change Time</button>
+        </div>
+      </div>
+      <div class="wrapper-middle">
+        <div class="col-12 text-center">
+          <p class="my-2" (click)="allergyModalOpen()">Do you have a food allergy? Click here</p>
+        </div>
+        <div class="col-12 p-2 cart-items">
+          <ng-container *ngFor="let item of cartdata; index as i;">
+            <li class="list-group-item d-flex align-items-start gap-3 p">
+              <div class="col-auto d-flex align-items-center gap-2 mt-1">
+                <span class="icon-minus" (click)="decreaseItemQuantity(item)"></span>
+                <span class="val">{{item?.quantity}}</span>
+                <span class="icon-plus" (click)="increaseItemQuantity(item)"></span>
+              </div>
+              <div class="col" (click)="editItem(item)">
+                <div class="slot-top d-flex justify-content-between gap-2 fw-semibold">
+                  <span class="dish-name">{{item?.dish_name}}</span>
+                  <span class="dish-price">{{item?.unit_price | myCurrency}}</span>
+                </div>
+                <div class="slot-bottom lh-sm">
+                  <!-- For combination -->
+                  <ng-container *ngFor="let comb of item?.combination">
+                    <ng-container *ngIf="comb?.selectedOpt > 0">
+                      <ng-container *ngFor="let opt of comb?.options">
+                        <ng-container *ngIf="opt?.selectedQty > 0">
+                          <p class="d-flex justify-content-between gap-2 m-0">
+                            <span>
+                              <span class="text-muted" *ngIf="opt?.selectedQty > 1">+{{opt?.selectedQty}}</span>
+                              {{opt?.name}}
+                            </span>
+                            <span>
+                              <ng-container *ngIf="opt?.extended_price > 0; else regularPriceTemp;">
+                                {{opt?.extended_price | myCurrency}}
+                              </ng-container>
+                              <ng-template #regularPriceTemp>
+                                <ng-container *ngIf="opt?.max_free_quantity !== opt?.selectedQty">
+                                  {{(opt?.price * (opt?.selectedQty - opt?.max_free_quantity)) | myCurrency}}
+                                </ng-container>
+                              </ng-template>
+                            </span>
+                          </p>
+                        </ng-container>
+                      </ng-container>
+                    </ng-container>
+                  </ng-container>
+                  <!-- For group -->
+                  <ng-container *ngFor="let grp of item?.group">
+                    <ng-container *ngIf="grp?.selectedOpt > 0">
+                      <ng-container *ngFor="let opt of grp?.options">
+                        <ng-container *ngIf="opt?.selectedQty > 0">
+                          <p class="d-flex justify-content-between gap-2 m-0">
+                            <span>
+                              <span class="text-muted" *ngIf="opt?.selectedQty > 1">+{{opt?.selectedQty}}</span>
+                              {{opt?.name}}
+                            </span>
+                            <span>
+                              <ng-container *ngIf="opt?.extended_price > 0; else regularPriceTemp;">
+                                {{opt?.extended_price | myCurrency}}
+                              </ng-container>
+                              <ng-template #regularPriceTemp>
+                                <ng-container *ngIf="opt?.max_free_quantity !== opt?.selectedQty">
+                                  {{(opt?.price * (opt?.selectedQty - opt?.max_free_quantity)) | myCurrency}}
+                                </ng-container>
+                              </ng-template>
+                            </span>
+                          </p>
+                        </ng-container>
+                      </ng-container>
+                    </ng-container>
+                  </ng-container>
+                  <p *ngIf="item?.dish_instruction" class="dish-instrction m-0">{{item?.dish_instruction}}</p>
+                </div>
+              </div>
+            </li>
+          </ng-container>
+        </div>
+        <div class="col-12 p-2">
+          <ng-container *ngIf="(orderdata$ | async)?.promo; else promoWrap;">
+            <div class="card">
+              <div class="card-header">
+                Your Selected deal
+              </div>
+              <div class="card-body p-2">
+                <li class="d-flex justify-content-between align-items-center">
+                  <div class="ms-2 me-auto fw-semibold">{{(orderdata$ | async)?.promo?.title}}</div>
+                  <button class="btn btn-sm btn-outline-primary" (click)="rejectPromotion()">Reject</button>
+                </li>
+              </div>
+            </div>
+          </ng-container>
+          <ng-template #promoWrap>
+            <div class="card">
+              <div class="card-header">
+                Your deals
+                <div class="float-end">
+                  <button class="btn btn-sm btn-primary" type="button" data-bs-target="#promoList" data-bs-slide="prev">
+                    <span class="icon-icon-126492"></span>
+                  </button>
+                  <button class="btn btn-sm btn-primary" type="button" data-bs-target="#promoList" data-bs-slide="next">
+                    <span class="icon-icon-126490"></span>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body p-2 mb-3">
+                <div id="promoList" class="carousel slide" data-bs-ride="carousel">
+                  <div class="carousel-inner">
+                    <ng-container *ngFor="let promo of (orderdata$ | async)?.eliPromoList; index as i;">
+                      <div class="carousel-item" [ngClass]="{'active': i === 0}">
+                        <li class="d-flex justify-content-between align-items-center">
+                          <div class="ms-2 me-auto">{{promo.title}}</div>
+                          <button class="btn btn-sm btn-outline-primary" (click)="acceptPromotion(promo)">Accept</button>
+                        </li>
+                      </div>
+                    </ng-container>
+                  </div>
+                </div>
+              </div>
+              <div class="carousel-indicators">
+                <ng-container *ngFor="let promo of (orderdata$ | async)?.eliPromoList; index as i;">
+                  <button type="button" data-bs-target="#promoList" [attr.data-bs-slide-to]="i"></button>
+                </ng-container>
+              </div>
+            </div>
+          </ng-template>
+        </div>
+        <div class="col-12 d-grid py-1">
+          <ng-container *ngIf="order_notes || orderNotesWrapShow; else addorderNotesTemp;">
+            <div class="card">
+              <div class="card-body p-2">
+                <p class="m-0">Order Notes</p>
+                <p class="lh-1"><small>You can request special instruction for your delivery order.</small></p>
+                <textarea type="text" placeholder="e.g. No Souces etc." class="form-control"
+                  [(ngModel)]="order_notes" (ngModelChange)="changedNotes($event)" [ngModelOptions]="{updateOn: 'blur'}">
+                </textarea>
+                <button type="button" class="btn btn-sm btn-primary float-end mt-2" (click)="removeOrderNotes()">
+                  Cancel
+                </button>
+              </div>
+            </div>         
+          </ng-container>
+          <ng-template #addorderNotesTemp>
+            <button type="button" class="btn btn-primary" (click)="orderNotesWrapShow = true">Add Order Notes</button>
+          </ng-template>
+        </div>
+      </div>
+      <div class="wrapper-bottom">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item d-flex justify-content-between align-items-center p-1" *ngIf="sub_total > 0">
+            <span>Sub Total</span>
+            <span>{{sub_total | myCurrency}}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center p-1" *ngIf="discount_amount > 0">
+            <span>Discount</span>
+            <span>{{discount_amount | myCurrency}}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center p-1" *ngIf="delivery_charge > 0">
+            <span>Delivery fee</span>
+            <span>{{delivery_charge | myCurrency}}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center p-1" *ngIf="service_charge > 0">
+            <span>Service fee</span>
+            <span>{{service_charge | myCurrency}}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center p-1" *ngIf="bag_charge > 0">
+            <span>{{(resdata$ | async)?.restaurant_data.bag_charge_title}}</span>
+            <span>{{bag_charge | myCurrency}}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between align-items-center p-1 fw-bold">
+            <span>Total</span>
+            <span>{{grand_total | myCurrency}}</span>
+          </li>         
+        </ul>
+        <div class="col-12 d-grid p-1">
+          <ng-container *ngIf="min_order_msg; else normalButton">
+            <button type="button" class="btn btn-lg btn-primary" disabled>{{min_order_msg}}</button>
+          </ng-container>
+          <ng-template #normalButton>
+            <button type="button" class="btn btn-lg btn-primary" (click)="proceedToCheckout()">
+              <span class="d-flex justify-content-between">
+                <span>Go to Checkout</span>
+                <span>{{grand_total | myCurrency}}</span>
+              </span>
+            </button>
+          </ng-template>
+        </div>
+      </div>
+    </ng-container>
+    <ng-template #emptyCartDiv>
+      <div class="empty-cart text-center p-3">
+        <img defaultImage="assets/images/placeholder.jpg" [lazyLoad]="'assets/images/empty-cart.png'" class="img-fluid" alt="...">
+        <h5 class="text">Your Basket is Empty</h5>
+        <p class="text-des">There are no items in your basket</p>
+      </div>
+    </ng-template>
+  </div>
+</div>

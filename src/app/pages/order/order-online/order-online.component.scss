@@ -1,0 +1,35 @@
+.order-page {
+  .top-bg {background-color: rgba(0, 0, 0, 0.5);min-height: 300px; padding: 2em 0; position: relative;
+    display: flex; align-items: flex-end;
+    .info-box {
+      .box {display: grid; width: min(100%, 400px); padding: 1em; border-radius: 1rem;
+        background: linear-gradient(to top, #fffff6d3, #f5f5fb);
+        .r_review {font-weight: 500;display: grid;grid-auto-flow: column;justify-content: flex-start;align-items: center;
+          .rating {color: #ef9713;}
+          .point {margin-left: .5em;color: #ef9713;letter-spacing: 0;}
+          .rate {margin: 0 .5em;}
+          .no-of-review a {color: var(--cyan);letter-spacing: 0;}
+        }
+        .divider {border-bottom: 1px solid #ccc;margin: .35em 0;width: 100%;}
+        .r_range {font-weight: 500;
+          span:not(:last-child)::after {content: ", ";}
+        }
+        .r_schedule {margin-top: .25em;}
+        .r_policy {font-weight: 500;
+          span:not(:last-child)::after {content: " | ";}
+        }
+      }
+    }
+    .bg-image {position: absolute; top: 0; bottom: 0; left: 0; right: 0; z-index: -1;}
+  }
+  .navbar {background-color: var(--theme-body-bg-shade); color: var(--theme-body-fg-shade); box-shadow: 0 0 20px rgba(var(--theme-body-fg-rgb), 10%);
+    .nav-link {color: currentColor;
+      &.active {color: var(--theme-primary-contrast); background-color: var(--theme-primary);}
+    }
+    .dropdown {
+      .nav-link {width: 85px; text-align: right;border-radius: 0.5rem ; padding: 0.5em;}
+      .dropdown-menu {position: absolute; right: 0; left: -200%; text-align: right;}
+    }
+  }
+  .main-content {padding-top: 2em; padding-bottom: 2em;}
+}

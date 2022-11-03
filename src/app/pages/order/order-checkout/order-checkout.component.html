@@ -1,0 +1,204 @@
+<div class="container-fluid">
+  <div class="row top-bg">
+    <div class="container info-box"></div>
+    <div class="bg-image" [ngStyle]="{background: 'url('+(resdata$ | async)?.restaurant_data?.cover_image+') no-repeat center top / cover'}"></div>
+  </div>
+</div>
+<div class="container main-content">
+  <div class="row">
+    <div class="progress-pannel">
+      <p class="checked">
+        <span><span class="icon-checked"></span></span>
+        <span>Order Details</span>
+      </p>
+      <p class="checked">
+        <span><span class="icon-checked"></span></span>
+        <span>Order Summery</span>
+      </p>
+      <p class="unchecked">
+        <span><span class="icon-checked"></span></span>
+        <span>Order Complete</span>
+      </p>
+    </div>
+  </div>
+  <div class="row pannel">
+    <div class="left">
+      <div class="card no-border-card">
+        <h5 class="card-header">
+          <span>{{(orderdata$ | async)?.policy?.takeaway | titlecase}} details</span>
+          <button type="button" class="btn btn-sm btn-primary" (click)="changePolicy()">Change Time</button>
+        </h5>
+        <div class="card-body">
+          <p class="card-text text-muted mb-3">
+            You can also pre-order for a later time by clicking the Change Time button above.
+          </p>
+          <div class="card">
+            <div class="card-body selected_address">
+              <h5>
+                <span>{{(orderdata$ | async)?.policy?.takeaway | uppercase}}</span>
+                <span>{{(orderdata$ | async)?.policy?.clock_time | uppercase}}</span>
+              </h5>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card no-border-card" *ngIf="(orderdata$ | async)?.policy?.takeaway === 'delivery'">
+        <h5 class="card-header">
+          <span>Delivery address</span>
+          <ng-container *ngIf="(userdata$ | async)?.data?.user_type !== 'guest_user' && (orderdata$ | async)?.address">
+            <button type="button" class="btn btn-sm btn-primary" (click)="changeAddreses = !changeAddreses">
+              {{changeAddreses ? 'Cancel' : 'Change address'}}
+            </button>
+          </ng-container>
+        </h5>
+        <div class="card-body">
+          <ng-container *ngIf="(userdata$ | async)?.data?.user_type !== 'guest_user'">
+            <p class="card-text text-muted mb-3">You can add <strong>an alternative delivery address</strong>. To change your profile address choose <strong>My Account</strong> tab</p>
+          </ng-container>
+          <div class="card">
+            <div class="card-body">
+              <ng-container *ngIf="!changeAddreses && (orderdata$ | async)?.address; else selectAddressTemp;">
+                <table class="">
+                  <tr>
+                    <td>Name</td>
+                    <td>
+                      {{(orderdata$ | async)?.address?.first_name}}
+                      {{(orderdata$ | async)?.address?.last_name}}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Address</td>
+                    <td>{{formatedAddress((orderdata$ | async)?.address)}}</td>
+                  </tr>
+                  <tr>
+                    <td>Contact</td>
+                    <td>{{(orderdata$ | async)?.address?.mobile_no}}</td>
+                  </tr>
+                  <tr class="text-info" *ngIf="(orderdata$ | async)?.address?.driver_instruction">
+                    <td>Driver ins.</td>
+                    <td><span [innerHtml]="(orderdata$ | async)?.address?.driver_instruction"></span></td>
+                  </tr>
+                </table>
+              </ng-container>
+              <ng-template #selectAddressTemp>
+                <div class="btn-group d-grid gap-2" role="group" aria-label="Basic radio toggle button group">
+                  <ng-container *ngFor="let item of (userdata$ | async)?.data?.order_address">
+                    <input type="radio" class="btn-check" name="address" id="{{item?._id}}" autocomplete="off" (click)="setDeliveryAddress(item)">
+                    <label class="btn btn-outline-primary rounded" for="{{item?._id}}">
+                      {{formatedAddress(item)}}
+                    </label>
+                  </ng-container>
+                  <ng-container *ngFor="let item of (userdata$ | async)?.data?.parcel_address">
+                    <input type="radio" class="btn-check" name="address" id="{{item?._id}}" autocomplete="off" (click)="setDeliveryAddress(item)">
+                    <label class="btn btn-outline-primary rounded" for="{{item?._id}}">
+                      {{formatedAddress(item)}}
+                    </label>
+                  </ng-container>
+                </div>
+                <button type="button" class="w-100 btn btn-primary mt-4" (click)="addNewAddress()">
+                  <span class="icon-plus"></span> Add new address
+                </button>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card no-border-card">
+        <h5 class="card-header">Select payment method</h5>
+        <div class="card-body">
+          <p class="card-text text-muted mb-3">Please select your payment method from below options</p>
+          <div class="card">
+            <div class="card-body">
+              <strong *ngIf="!paymentMethods">Loading...</strong>
+              <div class="btn-group btn-group-lg payment-btn-grp" role="group" aria-label="Basic radio toggle button group">
+                <ng-container *ngIf="paymentMethods?.cash?.is_active">
+                  <input type="radio" class="btn-check" name="paymentMethod" id="payCash" autocomplete="off"
+                  (click)="setPaymentMethod('CASH')" [checked]="(orderdata$ | async)?.payment === 'CASH'">
+                  <label class="btn btn-cash" for="payCash">
+                    <span>{{paymentMethods?.cash?.title}}</span>
+                    <img class="img-fluid" src="assets/images/cash-icon.png">
+                  </label>
+                </ng-container>
+                <ng-container *ngIf="paymentMethods?.card?.is_active">
+                  <input type="radio" class="btn-check" name="paymentMethod" id="payCard" autocomplete="off"
+                  (click)="setPaymentMethod('CARD')" [checked]="(orderdata$ | async)?.payment === 'CARD'">
+                  <label class="btn btn-card" for="payCard">
+                    <span>{{paymentMethods?.card?.title}}</span>
+                    <img class="img-fluid" src="assets/images/card-icon.png">
+                  </label>
+                </ng-container>
+                <ng-container *ngIf="paymentMethods?.paypal?.is_active">
+                  <input type="radio" class="btn-check" name="paymentMethod" id="payPaypal" autocomplete="off"
+                  (click)="setPaymentMethod('PAYPAL')" [checked]="(orderdata$ | async)?.payment === 'PAYPAL'">
+                  <label class="btn btn-paypal" for="payPaypal">
+                    <span>{{paymentMethods?.paypal?.title}}</span>
+                    <img class="img-fluid" src="assets/images/paypal-icon.png">
+                  </label>
+                </ng-container>
+                <ng-container *ngIf="paymentMethods?.chilli_point?.is_active">
+                  <input type="radio" class="btn-check" name="paymentMethod" id="payChilli" autocomplete="off"
+                  (click)="setPaymentMethod('CPOINT')" [checked]="(orderdata$ | async)?.payment === 'CPOINT'">
+                  <label class="btn btn-chilli" for="payChilli">
+                    <span>{{paymentMethods?.chilli_point?.title}}</span>
+                    <img class="img-fluid" src="assets/images/cpoint-icon.png">
+                  </label>
+                </ng-container>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card no-border-card">
+        <h5 class="card-header">Promo code</h5>
+        <div class="card-body">
+          <p class="card-text text-muted mb-3">You can get discount by add promo code and your chilli point. If you
+            have any promo code, then click promo code button to validate your code.</p>
+          <div class="card">
+            <div class="card-body">
+              <!-- <div class="btn-group btn-group-toggle btn-grp-disc" role="group">
+                <button class="btn btn-outline-dark">
+                  <span class="icon"><i class="icon-gift-card"></i></span>
+                  <span class="info">Promo Code</span>
+                </button>
+                <button class="btn btn-outline-dark">
+                  <span class="icon"><i class="icon-discount"></i></span>
+                  <span class="info">Chilli Point</span>
+                </button>
+              </div> -->
+              <ng-container *ngIf="(orderdata$ | async)?.coupon; else couponWrap;">
+                <div class="row">
+                  <div class="col">
+                    <p class="card-text text-muted mb-1">Your Code: <strong>{{(orderdata$ | async)?.coupon?.code}}</strong></p>
+                    <h5>{{(orderdata$ | async)?.coupon?.title}}</h5>
+                  </div>
+                  <div class="col-auto">
+                    <button class="btn btn-sm btn-outline-danger" (click)="removeCoupon()">
+                      <span class="me-2"><i class="icon-unchecked"></i></span>
+                      <span class="info">Remove</span>
+                    </button>
+                  </div>
+                </div>
+              </ng-container>
+              <ng-template #couponWrap>
+                <div class="input-group input-group-lg">
+                  <input type="text" class="form-control" placeholder="enter your code" [(ngModel)]="couponCode">
+                  <span class="input-group-text bg-dark text-light pointer" (click)="validateCoupon()">Submit</span>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card no-border-card">
+        <p class="text-center text-danger" *ngIf="errorMessage" [innerHTML]="errorMessage"></p>
+        <button class="w-100 btn btn-lg btn-primary" (click)="proceedToCheckout()">
+          <span class="icon-tick-inside-circle"></span>
+          Place {{(orderdata$ | async)?.policy?.takeaway | titlecase}} Order
+        </button>
+      </div>
+    </div>
+    <div class="right">
+      <app-cart></app-cart>
+    </div>
+  </div>
+</div>
